@@ -49,14 +49,23 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: regEmail,
         password: regPassword,
       })
-      if (error) throw error
-      if (!data.user) throw new Error('가입에 실패했습니다.')
+      if (signUpError) throw signUpError
+      if (!signUpData.user) throw new Error('가입에 실패했습니다.')
 
-      await upsertBuyer(data.user.id, {
+      // signUp 후 세션이 없는 경우(이메일 확인 대기) 바로 로그인해서 세션 확보
+      if (!signUpData.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: regEmail,
+          password: regPassword,
+        })
+        if (signInError) throw signInError
+      }
+
+      await upsertBuyer(signUpData.user.id, {
         company_name: regCompany,
         contact_name: regContact,
         phone: regPhone,
@@ -121,7 +130,7 @@ export default function LoginPage() {
                     required
                     value={loginEmail}
                     onChange={e => setLoginEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="example@company.com"
                   />
                 </div>
@@ -132,7 +141,7 @@ export default function LoginPage() {
                     required
                     value={loginPassword}
                     onChange={e => setLoginPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="비밀번호를 입력하세요"
                   />
                 </div>
@@ -153,7 +162,7 @@ export default function LoginPage() {
                     required
                     value={regCompany}
                     onChange={e => setRegCompany(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="회사명을 입력하세요"
                   />
                 </div>
@@ -164,7 +173,7 @@ export default function LoginPage() {
                     required
                     value={regContact}
                     onChange={e => setRegContact(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="담당자 이름을 입력하세요"
                   />
                 </div>
@@ -175,7 +184,7 @@ export default function LoginPage() {
                     required
                     value={regPhone}
                     onChange={e => setRegPhone(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="010-0000-0000"
                   />
                 </div>
@@ -186,7 +195,7 @@ export default function LoginPage() {
                     required
                     value={regEmail}
                     onChange={e => setRegEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="example@company.com"
                   />
                 </div>
@@ -198,7 +207,7 @@ export default function LoginPage() {
                     minLength={6}
                     value={regPassword}
                     onChange={e => setRegPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="6자 이상 입력하세요"
                   />
                 </div>
