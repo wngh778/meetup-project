@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS buyers (
   contact_name TEXT NOT NULL,
   phone        TEXT NOT NULL,
   email        TEXT NOT NULL,
+  role         TEXT NOT NULL DEFAULT 'buyer' CHECK (role IN ('buyer', 'admin')),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -108,3 +109,29 @@ INSERT INTO time_slots (id, slot_label, start_time, end_time, sort_order) VALUES
   (9,  'Slot 9',  '16:40', '17:10', 9),
   (10, 'Slot 10', '17:20', '17:50', 10)
 ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- 기존 DB에 role 컬럼 추가 (이미 테이블이 있는 경우 실행)
+-- ============================================================
+ALTER TABLE buyers ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'buyer' CHECK (role IN ('buyer', 'admin'));
+
+-- ============================================================
+-- 관리자 계정 설정 (이메일 주소를 실제 관리자 이메일로 변경)
+-- Supabase Authentication > Users에서 먼저 계정을 만든 후 실행
+-- ============================================================
+-- UPDATE buyers SET role = 'admin' WHERE email = 'admin@yourcompany.com';
+
+-- ============================================================
+-- Admin RLS 정책 추가 (관리자는 모든 buyers/bookings 조회 및 수정 가능)
+-- ============================================================
+CREATE POLICY "admin_buyers_select_all" ON buyers FOR SELECT
+  USING (
+    auth.uid() = id OR
+    EXISTS (SELECT 1 FROM buyers WHERE id = auth.uid() AND role = 'admin')
+  );
+
+CREATE POLICY "admin_bookings_update_all" ON bookings FOR UPDATE
+  USING (
+    auth.uid() = buyer_id OR
+    EXISTS (SELECT 1 FROM buyers WHERE id = auth.uid() AND role = 'admin')
+  );

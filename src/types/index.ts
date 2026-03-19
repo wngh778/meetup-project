@@ -20,6 +20,7 @@ export interface Buyer {
   contact_name: string
   phone: string
   email: string
+  role: 'buyer' | 'admin'
   created_at: string
   updated_at: string
 }

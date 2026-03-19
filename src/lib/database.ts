@@ -74,3 +74,31 @@ export async function cancelBooking(bookingId: string, buyerId: string): Promise
     .eq('buyer_id', buyerId)
   if (error) throw error
 }
+
+// Admin functions
+export async function adminGetAllBookings(): Promise<Booking[]> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, booths(*), time_slots(*), buyers(*)')
+    .eq('status', 'confirmed')
+    .order('time_slot_id')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function adminGetAllBuyers(): Promise<Buyer[]> {
+  const { data, error } = await supabase
+    .from('buyers')
+    .select('*')
+    .order('created_at')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function adminCancelBooking(bookingId: string): Promise<void> {
+  const { error } = await supabase
+    .from('bookings')
+    .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+    .eq('id', bookingId)
+  if (error) throw error
+}
