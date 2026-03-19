@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { adminCancelBooking } from '@/lib/database'
 import type { Booth, TimeSlot, Booking, Buyer } from '@/types'
 
 interface Props {
@@ -49,7 +48,12 @@ export default function AdminClient({ booths, timeSlots, initialBookings, buyers
   async function handleCancel(bookingId: string) {
     if (!confirm('Cancel this meeting?')) return
     try {
-      await adminCancelBooking(bookingId)
+      const res = await fetch('/api/admin/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId }),
+      })
+      if (!res.ok) throw new Error()
       showToast('Meeting cancelled.', 'success')
       await loadBookings()
     } catch {
